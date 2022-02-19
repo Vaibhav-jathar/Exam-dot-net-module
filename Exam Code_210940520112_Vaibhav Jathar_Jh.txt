@@ -1,0 +1,427 @@
+Model Product
+
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Web;
+
+namespace Exam_112_Jh.Models
+{
+    public class Product
+    {
+        [Key]
+        public int ProductId { get; set; }
+        [Required(ErrorMessage ="Name Can Not Be Empty !!")]
+        [DataType(DataType.Text)]
+        [MaxLength(50)]
+        public string ProductName { get; set; }
+
+        [DataType(DataType.Currency)]
+        [Required(ErrorMessage ="Enter Product Rate !!")]
+        public decimal Rate { get; set; }
+
+        [Required(ErrorMessage ="Description Must be Enter for Product !!")]
+        [DataType(DataType.Text)]
+        [MaxLength(200)]
+        public string Description { get; set; }
+
+        [Required(ErrorMessage ="Please Select Proper Category !!")]
+        [MaxLength(50)]
+        public string CategoryName { get; set; }
+        
+
+    }
+}
+
+------------------------------------------------------------------------------------------------------------------------------------------
+Product Controller
+
+using Exam_112_Jh.Models;
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace Exam_112_Jh.Controllers
+{
+    public class ProductsController : Controller
+    {
+        SqlConnection cn = new SqlConnection(@"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=Finalexam;Integrated Security=True");
+        // GET: Products
+        public ActionResult Index()
+        {
+            List<Product> prlist = new List<Product>();
+            cn.Open();
+            SqlCommand cmdGetAll = new SqlCommand();
+            cmdGetAll.Connection = cn;
+            cmdGetAll.CommandType = System.Data.CommandType.StoredProcedure;
+            cmdGetAll.CommandText = "GetAllProducts";
+            try
+            {
+                SqlDataReader dr = cmdGetAll.ExecuteReader();
+
+                while (dr.Read())
+                {
+                    prlist.Add(new Product { ProductId = (int)dr["ProductId"], ProductName = (string)dr["ProductName"], Rate = (decimal)dr["Rate"], Description = (string)dr["Description"], CategoryName = (string)dr["CategoryName"] });
+                }
+                dr.Close();
+            }
+
+            catch (Exception e)
+            {
+                ViewBag.error = e.Message;
+            }
+
+            finally
+            {
+                cn.Close();
+            }
+            return View(prlist);
+        }
+
+        // GET: Products/Details/5
+        public ActionResult Details(int id)
+        {
+            return View();
+        }
+
+        // GET: Products/Create
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Products/Create
+        [HttpPost]
+        public ActionResult Create(FormCollection collection)
+        {
+            try
+            {
+                // TODO: Add insert logic here
+
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                return View();
+            }
+        }
+
+        // GET: Products/Edit/5
+        public ActionResult Edit(int? id)
+        {
+            cn.Open();
+            SqlCommand cmdEdit = new SqlCommand();
+            cmdEdit.Connection = cn;
+            cmdEdit.CommandType = System.Data.CommandType.StoredProcedure;
+            cmdEdit.CommandText = "FetchProduct";
+
+            cmdEdit.Parameters.AddWithValue("@ProductId",id);
+            Product obj = null;
+            try 
+            {
+                SqlDataReader dr = cmdEdit.ExecuteReader();
+                if (dr.Read())
+                {
+                    obj = new Product { ProductId = (int)dr["ProductId"], ProductName = (string)dr["ProductName"], Rate = (decimal)dr["Rate"], Description = (string)dr["Description"], CategoryName = (string)dr["CategoryName"] };
+                }
+
+                dr.Close();
+            }
+
+            catch (Exception e)
+            {
+                ViewBag.error = e.Message;
+            }
+
+            finally
+            {
+                cn.Close();
+            }
+            return View(obj);
+        }
+
+        // POST: Products/Edit/5
+        [HttpPost]
+        public ActionResult Edit(int id, Product obj)
+        {
+            cn.Open();
+            SqlCommand cmdEdit = new SqlCommand();
+            cmdEdit.Connection = cn;
+            cmdEdit.CommandType = System.Data.CommandType.StoredProcedure;
+            cmdEdit.CommandText = "EditProduct";
+
+            cmdEdit.Parameters.AddWithValue("@ProductName",obj.ProductName);
+            cmdEdit.Parameters.AddWithValue("@Rate", obj.Rate);
+            cmdEdit.Parameters.AddWithValue("@Description", obj.Description);
+            cmdEdit.Parameters.AddWithValue("@CategoryName", obj.CategoryName);
+            try
+            {
+                cmdEdit.ExecuteNonQuery();
+
+
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                return View();
+            }
+            finally
+            {
+                cn.Close();
+            }
+        }
+
+        // GET: Products/Delete/5
+        public ActionResult Delete(int id)
+        {
+            return View();
+        }
+
+        // POST: Products/Delete/5
+        [HttpPost]
+        public ActionResult Delete(int id, FormCollection collection)
+        {
+            try
+            {
+                // TODO: Add delete logic here
+
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                return View();
+            }
+        }
+        [ChildActionOnly]
+        public ActionResult MyPartialView()
+        {
+            return View();
+        }
+    }
+}
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+MyPageLayout
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>MyPageLayout</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+<body>
+    <div>
+        <h2> My Layout Page for .net Final Exam</h2>
+</div>
+    <div>
+        @RenderBody()
+    </div>
+    <div>
+        <h2>Created By Vaibhav Jathar (Juhu-sept2021 batch)</h2>
+    </div>
+    @RenderSection("scripts", required: false)
+</body>
+</html>
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Edit View
+
+@model Exam_112_Jh.Models.Product
+
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Views/Shared/MyPageLayout.cshtml";
+}
+
+<h2>Edit</h2>
+<h2>@ViewBag.error</h2>
+@{
+    Html.RenderPartial("MyPartialView");
+ }
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        <h4>Product</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.ProductId)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ProductName, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.ProductName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.ProductName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Rate, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Rate, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Rate, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.CategoryName, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.CategoryName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.CategoryName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Index View
+
+@model IEnumerable<Exam_112_Jh.Models.Product>
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/MyPageLayout.cshtml";
+}
+
+<h2>Index</h2>
+@{ 
+    Html.RenderPartial("MypartialView");
+}
+<h2>@ViewBag.error</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.ProductId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.ProductName)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Rate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Description)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.CategoryName)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+<tr>
+    <td>
+        @Html.ActionLink(item.ProductId.ToString(), "Edit", new { id = item.ProductId })
+
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.ProductName)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.Rate)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.Description)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.CategoryName)
+    </td>
+
+</tr>
+}
+
+</table>
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Partial View
+
+<h3>Created By : Vaibhav M. Jathar</h3>
+<h3>Center : CDAC Juhu</h3>
+<h3>Roll No : 210940520112</h3>
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Database table
+
+1	Harry Porter	10.00	descA	Books
+2	Percy Jackson	20.00	descB	Books
+3	Pen	30.00	descC	Stationery
+4	Marker	30.00	descD	Stationery
+NULL	NULL	NULL	NULL	NULL
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Stored Procedures
+
+CREATE PROCEDURE [dbo].EditProduct
+	@ProductId int ,
+	@ProductName Varchar(50),
+	@Rate decimal(18,2),
+	@Description Varchar(200),
+	@CategoryName Varchar(50)
+AS
+	Update Products set ProductName=@ProductName,Rate=@Rate,Description=@DesCription,CategoryName=@CategoryName where ProductId=@ProductId
+RETURN 0
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE PROCEDURE [dbo].FetchProduct
+	@ProductId int
+	
+AS
+	Select * from Products where ProductId = @ProductId
+RETURN 0
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE PROCEDURE [dbo].GetAllProducts
+	
+AS
+	Select * from Products
+RETURN 0
+
